@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Belya - Marble Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ground: #C4A574;
+      --ground-dark: #A68B5B;
+      --chalk: #F5F5F5;
+      --ruby: #E63946;
+      --sapphire: #1D3557;
+      --emerald: #2D6A4F;
+      --amber: #F4A261;
+      --amethyst: #7B2CBF;
+      --pearl: #F1FAEE;
+      --cue-white: #FFFFFF;
+      --throw-line: #8B4513;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Fredoka', sans-serif;
+      background: linear-gradient(135deg, #8B7355 0%, #6B5344 100%);
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #uiTop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%);
+    }
+
+    .ui-box {
+      background: rgba(0,0,0,0.5);
+      color: var(--pearl);
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #levelDisplay {
+      font-size: 0.7rem;
+    }
+
+    #levelDisplay span {
+      color: var(--amber);
+      font-size: 0.95rem;
+    }
+
+    #scoreDisplay {
+      font-size: 0.75rem;
+    }
+
+    #resetBtn, #soundBtn {
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: var(--pearl);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #soundBtn.muted {
+      opacity: 0.5;
+    }
+
+    #hintText {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: var(--pearl);
+      padding: 5px 14px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #menuOverlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    #menuOverlay.hidden {
+      display: none;
+    }
+
+    .menu-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--pearl);
+      text-shadow: 2px 2px 0 var(--ground-dark);
+      margin-bottom: 15px;
+      letter-spacing: 3px;
+    }
+
+    .menu-section {
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .menu-label {
+      color: var(--amber);
+      font-size: 0.7rem;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .menu-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 280px;
+      padding: 0 10px;
+    }
+
+    .menu-btn {
+      background: linear-gradient(145deg, var(--ground) 0%, var(--ground-dark) 100%);
+      border: 2px solid var(--pearl);
+      color: var(--pearl);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .menu-btn.selected {
+      background: linear-gradient(145deg, var(--amber) 0%, #c4813a 100%);
+    }
+
+    #startBtn {
+      background: linear-gradient(145deg, var(--emerald) 0%, #1e4a38 100%);
+      border: 2px solid var(--pearl);
+      color: var(--pearl);
+      padding: 10px 35px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    .instructions {
+      background: rgba(0,0,0,0.4);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 12px;
+      max-width: 280px;
+    }
+
+    .instructions p {
+      color: var(--pearl);
+      font-size: 0.8rem;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .instructions .highlight-white {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .instructions .highlight-red {
+      color: var(--ruby);
+      font-weight: 600;
+    }
+
+    .level-preview {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 10px;
+    }
+
+    .level-preview .level-title {
+      color: var(--amber);
+      font-size: 0.85rem;
+    }
+
+    .level-preview .level-info {
+      color: var(--pearl);
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    #winOverlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 15px;
+    }
+
+    #winOverlay.show {
+      display: flex;
+    }
+
+    .win-text {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--amber);
+      text-shadow: 2px 2px 0 var(--ground-dark);
+      margin-bottom: 10px;
+    }
+
+    .stars-display {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      letter-spacing: 3px;
+    }
+
+    .star {
+      display: inline-block;
+      opacity: 0.3;
+    }
+
+    .star.earned {
+      opacity: 1;
+      text-shadow: 0 0 10px #FFD700;
+    }
+
+    #shotCounter {
+      font-size: 0.8rem;
+      color: var(--pearl);
+      opacity: 0.8;
+      margin-bottom: 5px;
+    }
+
+    .win-score {
+      font-size: 1.1rem;
+      color: var(--pearl);
+      margin-bottom: 15px;
+    }
+
+    .win-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .win-btn {
+      background: linear-gradient(145deg, var(--emerald) 0%, #1e4a38 100%);
+      border: 2px solid var(--pearl);
+      color: var(--pearl);
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .win-btn.secondary {
+      background: linear-gradient(145deg, var(--ground) 0%, var(--ground-dark) 100%);
+    }
+
+    .floating-score {
+      position: absolute;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--amber);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+    }
+
+    .floating-comment {
+      position: absolute;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 1px 1px 3px rgba(0,0,0,0.5);
+      pointer-events: none;
+      animation: popUp 1.2s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+    }
+
+    @keyframes popUp {
+      0% { opacity: 0; transform: translateY(15px) scale(0.5); }
+      20% { opacity: 1; transform: translateY(-8px) scale(1.15); }
+      100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+    }
+
+    .figure-icon {
+      font-size: 1rem;
+      margin-right: 2px;
+    }
+
+    @media (max-width: 400px) {
+      .menu-title {
+        font-size: 1.8rem;
+      }
+      .menu-btn {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        min-width: 55px;
+      }
+      .win-text {
+        font-size: 1.5rem;
+      }
+    }
+
+    /* Desktop styles */
+    @media (min-width: 800px) {
+      .menu-title {
+        font-size: 3rem;
+        margin-bottom: 25px;
+      }
+      
+      .menu-section {
+        margin-bottom: 20px;
+      }
+      
+      .menu-label {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      
+      .menu-buttons {
+        max-width: 400px;
+        gap: 10px;
+      }
+      
+      .menu-btn {
+        padding: 10px 20px;
+        font-size: 1rem;
+        min-width: 80px;
+      }
+      
+      .instructions {
+        padding: 15px;
+        margin-bottom: 20px;
+        max-width: 380px;
+      }
+      
+      .instructions p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 6px;
+      }
+      
+      .level-preview {
+        padding: 12px;
+        margin-top: 15px;
+      }
+      
+      .level-preview .level-title {
+        font-size: 1.1rem;
+      }
+      
+      .level-preview .level-info {
+        font-size: 0.9rem;
+      }
+      
+      #startBtn {
+        padding: 14px 50px;
+        font-size: 1.2rem;
+        margin-top: 20px;
+      }
+      
+      #uiTop {
+        padding: 12px 20px;
+      }
+      
+      .ui-box {
+        padding: 8px 16px;
+        font-size: 1rem;
+      }
+      
+      #levelDisplay {
+        font-size: 0.9rem;
+      }
+      
+      #levelDisplay span {
+        font-size: 1.1rem;
+      }
+      
+      #scoreDisplay {
+        font-size: 1rem;
+      }
+      
+      #resetBtn, #soundBtn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+      }
+      
+      #hintText {
+        font-size: 0.95rem;
+        padding: 8px 20px;
+        bottom: 30px;
+      }
+      
+      .win-text {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+      }
+      
+      .stars-display {
+        font-size: 3rem;
+        margin-bottom: 20px;
+      }
+      
+      #shotCounter {
+        font-size: 1rem;
+        margin-bottom: 8px;
+      }
+      
+      .win-score {
+        font-size: 1.4rem;
+        margin-bottom: 25px;
+      }
+      
+      .win-buttons {
+        gap: 20px;
+      }
+      
+      .win-btn {
+        padding: 12px 35px;
+        font-size: 1.1rem;
+      }
+      
+      .floating-score {
+        font-size: 1.6rem;
+      }
+      
+      .floating-comment {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="uiTop">
+      <div class="ui-box" id="levelDisplay">Lvl <span id="levelValue">1</span></div>
+      <div class="ui-box" id="scoreDisplay">
+        <span id="scoreValue">0</span>/<span id="totalBalls">0</span>
+        <span style="opacity:0.5">•</span>
+        <span id="shotsDisplay">0</span>
+      </div>
+      <div style="display:flex;gap:5px;">
+        <button id="soundBtn">🔊</button>
+        <button id="resetBtn">↺</button>
+      </div>
+    </div>
+
+    <div id="hintText">Drag from your white ball to aim</div>
+    <canvas id="canvas"></canvas>
+
+    <div id="menuOverlay">
+      <div class="menu-title">BELY A</div>
+
+      <div class="instructions">
+        <p>Use your <span class="highlight-white">white ball</span> to strike <span class="highlight-red">colored balls</span> out!</p>
+        <p>Start from the line on the side.</p>
+      </div>
+
+      <div class="menu-section">
+        <button class="menu-btn" id="menuSoundBtn" style="padding:5px 15px;">🔊</button>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-label">Mode</div>
+        <div class="menu-buttons">
+          <button class="menu-btn selected" data-mode="solo">Solo</button>
+          <button class="menu-btn" data-mode="vs">VS</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-label">Level</div>
+        <div class="menu-buttons" id="figureButtons"></div>
+      </div>
+
+      <div class="level-preview" id="levelPreview">
+        <div class="level-title">Level 1</div>
+        <div class="level-info">Triangle • 3 balls</div>
+      </div>
+
+      <button class="menu-btn" id="startBtn">Play</button>
+    </div>
+
+    <div id="winOverlay">
+      <div class="win-text" id="winText">Level Complete!</div>
+      <div class="stars-display" id="starsDisplay">
+        <span class="star">★</span>
+        <span class="star">★</span>
+        <span class="star">★</span>
+      </div>
+      <div id="shotCounter">Shots: <span id="shotValue">0</span></div>
+      <div class="win-score" id="winScore">Score: 0</div>
+      <div class="win-buttons">
+        <button class="win-btn" id="nextLevelBtn">Next</button>
+        <button class="win-btn secondary" id="menuBtn2">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EXCITING_COMMENTS = [
+      "🔥 BOOM!", "💥 Perfect!", "⚡ Awesome!", "🌟 Great Shot!",
+      "💫 Amazing!", "🎯 Bullseye!", "🏆 Incredible!", "✨ Brilliant!",
+      "💎 Diamond!", "🎉 Woohoo!", "⭐ Superb!"
+    ];
+
+    const COMBO_COMMENTS = [
+      "🔥 DOUBLE!", "⚡ COMBO!", "💥 MULTI!", "🌟 DOUBLE KILL!"
+    ];
+
+    const LEVELS = [
+      { shape: 'triangle', balls: 3, name: 'Triangle', icon: '△' },
+      { shape: 'square', balls: 4, name: 'Square', icon: '□' },
+      { shape: 'diamond', balls: 4, name: 'Diamond', icon: '◇' },
+      { shape: 'triangle', balls: 6, name: 'Big Triangle', icon: '△' },
+      { shape: 'pentagon', balls: 5, name: 'Pentagon', icon: '⬠' },
+      { shape: 'hexagon', balls: 6, name: 'Hexagon', icon: '⬡' },
+      { shape: 'square', balls: 8, name: 'Big Square', icon: '□' },
+      { shape: 'circle', balls: 6, name: 'Circle', icon: '○' },
+      { shape: 'star', balls: 6, name: 'Star', icon: '☆' },
+      { shape: 'hexagon', balls: 9, name: 'Big Hexagon', icon: '⬡' },
+      { shape: 'cross', balls: 8, name: 'Cross', icon: '✚' },
+      { shape: 'octagon', balls: 8, name: 'Octagon', icon: '⯁' },
+      { shape: 'circle', balls: 10, name: 'Big Circle', icon: '○' },
+      { shape: 'star', balls: 10, name: 'Big Star', icon: '☆' },
+      { shape: 'decagon', balls: 10, name: 'Decagon', icon: '⯃' }
+    ];
+
+    function getFigurePoints(shape, centerX, centerY, radius) {
+      const shapes = {
+        triangle: (cx, cy, r) => {
+          const h = r * 0.866;
+          return [
+            { x: cx, y: cy - h * 0.67 },
+            { x: cx - r / 2, y: cy + h * 0.33 },
+            { x: cx + r / 2, y: cy + h * 0.33 }
+          ];
+        },
+        square: (cx, cy, r) => {
+          const s = r * 0.85;
+          return [
+            { x: cx - s, y: cy - s },
+            { x: cx + s, y: cy - s },
+            { x: cx + s, y: cy + s },
+            { x: cx - s, y: cy + s }
+          ];
+        },
+        diamond: (cx, cy, r) => [
+          { x: cx, y: cy - r },
+          { x: cx + r * 0.7, y: cy },
+          { x: cx, y: cy + r },
+          { x: cx - r * 0.7, y: cy }
+        ],
+        pentagon: (cx, cy, r) => {
+          const pts = [];
+          for (let i = 0; i < 5; i++) {
+            const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+            pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+          }
+          return pts;
+        },
+        hexagon: (cx, cy, r) => {
+          const pts = [];
+          for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2;
+            pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+          }
+          return pts;
+        },
+        circle: (cx, cy, r) => {
+          const pts = [];
+          for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2;
+            pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+          }
+          return pts;
+        },
+        star: (cx, cy, r) => {
+          const pts = [];
+          for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+            const d = i % 2 === 0 ? r : r * 0.5;
+            pts.push({ x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d });
+          }
+          return pts;
+        },
+        octagon: (cx, cy, r) => {
+          const pts = [];
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+            pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+          }
+          return pts;
+        },
+        cross: (cx, cy, r) => {
+          const arm = r * 0.35;
+          return [
+            { x: cx - r, y: cy - arm }, { x: cx - arm, y: cy - arm },
+            { x: cx - arm, y: cy - r }, { x: cx + arm, y: cy - r },
+            { x: cx + arm, y: cy - arm }, { x: cx + r, y: cy - arm },
+            { x: cx + r, y: cy + arm }, { x: cx + arm, y: cy + arm },
+            { x: cx + arm, y: cy + r }, { x: cx - arm, y: cy + r },
+            { x: cx - arm, y: cy + arm }, { x: cx - r, y: cy + arm }
+          ];
+        },
+        decagon: (cx, cy, r) => {
+          const pts = [];
+          for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+            pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+          }
+          return pts;
+        }
+      };
+      return shapes[shape] ? shapes[shape](centerX, centerY, radius) : shapes.triangle(centerX, centerY, radius);
+    }
+
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(type) {
+      if (!audioCtx || !game.soundEnabled) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      switch(type) {
+        case 'push':
+          osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.15);
+          break;
+        case 'score':
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.4);
+          break;
+        case 'collide':
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(600 + Math.random() * 200, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.08);
+          break;
+        case 'win':
+          [523, 659, 784, 1047].forEach((f, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = 'sine';
+            o.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.15);
+            g.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.3);
+            o.start(audioCtx.currentTime + i * 0.15);
+            o.stop(audioCtx.currentTime + i * 0.15 + 0.3);
+          });
+          break;
+      }
+    }
+
+    const game = {
+      mode: 'solo',
+      currentLevel: 0,
+      cueBall: null,
+      targetBalls: [],
+      scores: [0, 0],
+      currentPlayer: 0,
+      figurePoints: [],
+      figureCenter: { x: 0, y: 0 },
+      figureRadius: 0,
+      throwingLineX: 0,
+      throwingLineTop: 0,
+      throwingLineBottom: 0,
+      dragging: false,
+      dragStart: { x: 0, y: 0 },
+      dragEnd: { x: 0, y: 0 },
+      aimAngle: 0,
+      aimPower: 0,
+      gameOver: false,
+      canShoot: true,
+      pocketedThisTurn: 0,
+      soundEnabled: true,
+      ballsStoppedFrames: 0,
+      shotsTaken: 0,
+      comboCount: 0
+    };
+
+    const MARBLE_COLORS = [
+      { main: '#E63946', light: '#FF6B6B', dark: '#A82937' },
+      { main: '#1D3557', light: '#457B9D', dark: '#0D1B2A' },
+      { main: '#2D6A4F', light: '#40916C', dark: '#1B4332' },
+      { main: '#F4A261', light: '#FFCB8E', dark: '#C4813A' },
+      { main: '#7B2CBF', light: '#9D4EDD', dark: '#5A189A' },
+      { main: '#E9C46A', light: '#FFF1B8', dark: '#C9A227' },
+      { main: '#2A9D8F', light: '#40B4A6', dark: '#1E7268' },
+      { main: '#F77F00', light: '#FFB347', dark: '#C46200' }
+    ];
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const gameContainer = document.getElementById('gameContainer');
+    const menuOverlay = document.getElementById('menuOverlay');
+    const winOverlay = document.getElementById('winOverlay');
+    const hintText = document.getElementById('hintText');
+    const figureButtons = document.getElementById('figureButtons');
+
+    let groundPattern = null;
+    
+    // Ball sizes - responsive based on screen size
+    function getBallSizes() {
+      const isMobile = window.innerWidth < 600;
+      return {
+        cueRadius: isMobile ? 16 : 22,
+        targetRadius: isMobile ? 14 : 18
+      };
+    }
+
+    function generateFigureButtons() {
+      figureButtons.innerHTML = '';
+      LEVELS.forEach((level, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'menu-btn' + (index === game.currentLevel ? ' selected' : '');
+        btn.innerHTML = `<span class="figure-icon">${level.icon}</span>${level.balls}`;
+        btn.onclick = () => {
+          game.currentLevel = index;
+          document.querySelectorAll('#figureButtons .menu-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('levelPreview').innerHTML = `
+            <div class="level-title">Level ${index + 1}: ${level.name}</div>
+            <div class="level-info">${level.balls} balls</div>
+          `;
+        };
+        figureButtons.appendChild(btn);
+      });
+    }
+
+    function createGroundTexture() {
+      const pc = document.createElement('canvas');
+      pc.width = 100;
+      pc.height = 100;
+      const p = pc.getContext('2d');
+      p.fillStyle = '#C4A574';
+      p.fillRect(0, 0, 100, 100);
+      for (let i = 0; i < 400; i++) {
+        p.fillStyle = Math.random() > 0.5 ? `rgba(139,115,85,${Math.random() * 0.25})` : `rgba(196,165,116,${Math.random() * 0.25})`;
+        p.fillRect(Math.random() * 100, Math.random() * 100, 2, 2);
+      }
+      p.fillStyle = 'rgba(107,83,68,0.15)';
+      for (let i = 0; i < 4; i++) {
+        p.beginPath();
+        p.arc(Math.random() * 100, Math.random() * 100, Math.random() * 12 + 4, 0, Math.PI * 2);
+        p.fill();
+      }
+      p.strokeStyle = '#5D7A3D';
+      p.lineWidth = 1;
+      for (let i = 0; i < 6; i++) {
+        const gx = Math.random() * 100, gy = Math.random() * 100;
+        for (let j = 0; j < 3; j++) {
+          p.beginPath();
+          p.moveTo(gx, gy);
+          p.lineTo(gx + (Math.random() - 0.5) * 7, gy - Math.random() * 7 - 2);
+          p.stroke();
+        }
+      }
+      groundPattern = ctx.createPattern(pc, 'repeat');
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      createGroundTexture();
+      if (game.cueBall) {
+        setupLevel();
+        initBalls();
+      }
+    }
+
+    function setupLevel() {
+      const level = LEVELS[game.currentLevel];
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const isMobile = window.innerWidth < 600;
+      const sizeRatio = isMobile ? 0.18 : 0.22;
+      const size = Math.min(canvas.width, canvas.height) * sizeRatio;
+      
+      game.figureRadius = size;
+      game.figureCenter = { x: cx, y: cy };
+      game.figurePoints = getFigurePoints(level.shape, cx, cy, size);
+      
+      // Throwing line on the LEFT side of the figure
+      const lineMarginRatio = isMobile ? 0.12 : 0.15;
+      const lineMargin = Math.max(canvas.width * lineMarginRatio, isMobile ? 55 : 70);
+      game.throwingLineX = lineMargin;
+      game.throwingLineTop = cy - size * (isMobile ? 1.3 : 1.5);
+      game.throwingLineBottom = cy + size * (isMobile ? 1.3 : 1.5);
+      
+      // Clamp
+      const bottomClamp = isMobile ? 40 : 50;
+      if (game.throwingLineBottom > canvas.height - bottomClamp) {
+        game.throwingLineBottom = canvas.height - bottomClamp;
+        game.throwingLineTop = game.throwingLineBottom - size * (isMobile ? 2.6 : 3);
+      }
+      const topClamp = isMobile ? 55 : 60;
+      if (game.throwingLineTop < topClamp) {
+        game.throwingLineTop = topClamp;
+        game.throwingLineBottom = game.throwingLineTop + size * (isMobile ? 2.6 : 3);
+      }
+    }
+
+    function initBalls() {
+      const level = LEVELS[game.currentLevel];
+      const count = level.balls;
+      const sizes = getBallSizes();
+      
+      // Cue ball on the throwing line, vertically centered
+      const cueY = game.figureCenter.y;
+      game.cueBall = {
+        x: game.throwingLineX,
+        y: cueY,
+        vx: 0,
+        vy: 0,
+        radius: sizes.cueRadius,
+        color: { main: '#FFFFFF', light: '#FFFFFF', dark: '#CCCCCC' },
+        isCue: true
+      };
+      
+      game.targetBalls = [];
+      const pts = game.figurePoints;
+      
+      for (let i = 0; i < count; i++) {
+        const ci = i % MARBLE_COLORS.length;
+        let pos;
+        
+        if (pts.length <= 4) {
+          const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+          pos = {
+            x: game.figureCenter.x + Math.cos(angle) * (game.figureRadius * 0.5),
+            y: game.figureCenter.y + Math.sin(angle) * (game.figureRadius * 0.5)
+          };
+        } else {
+          const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+          const dist = game.figureRadius * (0.3 + Math.random() * 0.35);
+          pos = {
+            x: game.figureCenter.x + Math.cos(angle) * dist,
+            y: game.figureCenter.y + Math.sin(angle) * dist
+          };
+        }
+        
+        const minDist = sizes.targetRadius * 2.5 + 4;
+        let attempts = 0;
+        while (attempts < 15) {
+          let overlap = false;
+          for (const b of game.targetBalls) {
+            const dx = pos.x - b.x, dy = pos.y - b.y;
+            if (Math.sqrt(dx * dx + dy * dy) < minDist) { overlap = true; break; }
+          }
+          if (!overlap) break;
+          const a = Math.random() * Math.PI * 2;
+          const d = Math.random() * game.figureRadius * 0.55;
+          pos = { x: game.figureCenter.x + Math.cos(a) * d, y: game.figureCenter.y + Math.sin(a) * d };
+          attempts++;
+        }
+        
+        game.targetBalls.push({
+          x: pos.x, y: pos.y, vx: 0, vy: 0,
+          radius: sizes.targetRadius, color: MARBLE_COLORS[ci], active: true
+        });
+      }
+      
+      game.scores = [0, 0];
+      game.gameOver = false;
+      game.canShoot = true;
+      game.pocketedThisTurn = 0;
+      game.ballsStoppedFrames = 0;
+      game.shotsTaken = 0;
+      game.comboCount = 0;
+      
+      document.getElementById('scoreValue').textContent = '0';
+      document.getElementById('totalBalls').textContent = count;
+      document.getElementById('levelValue').textContent = game.currentLevel + 1;
+      document.getElementById('shotValue').textContent = '0';
+      document.getElementById('shotsDisplay').textContent = '0';
+      updateHint();
+    }
+
+    function updateHint() {
+      hintText.style.opacity = game.canShoot ? '1' : '0.4';
+      hintText.textContent = game.canShoot ? 'Drag from white ball to aim' : 'Wait...';
+    }
+
+    function isInsideFigure(x, y) {
+      const pts = game.figurePoints;
+      let inside = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const xi = pts[i].x, yi = pts[i].y, xj = pts[j].x, yj = pts[j].y;
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    function drawGround() {
+      ctx.fillStyle = groundPattern || '#C4A574';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawThrowingLine() {
+      const x = game.throwingLineX;
+      const y1 = game.throwingLineTop;
+      const y2 = game.throwingLineBottom;
+      
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x + 2, y1 + 2);
+      ctx.lineTo(x + 2, y2 + 2);
+      ctx.stroke();
+      
+      ctx.strokeStyle = '#8B4513';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(x, y1);
+      ctx.lineTo(x, y2);
+      ctx.stroke();
+      
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath();
+      ctx.arc(x, y1, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y2, 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(139,69,19,0.7)';
+      ctx.font = '500 9px Fredoka';
+      ctx.textAlign = 'center';
+      ctx.fillText('START', x, y2 + 16);
+      ctx.restore();
+    }
+
+    function drawFigure() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(game.figurePoints[0].x + 2, game.figurePoints[0].y + 2);
+      for (let i = 1; i < game.figurePoints.length; i++) {
+        ctx.lineTo(game.figurePoints[i].x + 2, game.figurePoints[i].y + 2);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(245,245,245,0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(game.figurePoints[0].x, game.figurePoints[0].y);
+      for (let i = 1; i < game.figurePoints.length; i++) {
+        ctx.lineTo(game.figurePoints[i].x, game.figurePoints[i].y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      
+      ctx.setLineDash([3, 10]);
+      ctx.strokeStyle = 'rgba(245,245,245,0.3)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      ctx.fillStyle = 'rgba(245,245,245,0.5)';
+      for (const p of game.figurePoints) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBall(ball) {
+      const { x, y, radius, color } = ball;
+      ctx.save();
+      
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(x + 2, y + 3, radius, radius * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      const g = ctx.createRadialGradient(x - radius * 0.3, y - radius * 0.3, 0, x, y, radius);
+      g.addColorStop(0, color.light);
+      g.addColorStop(0.5, color.main);
+      g.addColorStop(1, color.dark);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.beginPath();
+      ctx.ellipse(x - radius * 0.22, y - radius * 0.28, radius * 0.3, radius * 0.2, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(x - radius * 0.38, y - radius * 0.4, radius * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+
+    function drawCueBall() {
+      if (!game.cueBall) return;
+      const { x, y, radius } = game.cueBall;
+      ctx.save();
+      
+      ctx.shadowColor = '#FFF';
+      ctx.shadowBlur = game.canShoot ? 12 : 5;
+      
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(x + 2, y + 3, radius, radius * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      const g = ctx.createRadialGradient(x - radius * 0.32, y - radius * 0.32, 0, x, y, radius);
+      g.addColorStop(0, '#FFF');
+      g.addColorStop(0.4, '#F5F5F5');
+      g.addColorStop(0.7, '#E8E8E8');
+      g.addColorStop(1, '#CCC');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath();
+      ctx.ellipse(x - radius * 0.25, y - radius * 0.3, radius * 0.35, radius * 0.22, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (game.canShoot && !game.dragging) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.restore();
+    }
+
+    function drawAimingLine() {
+      if (!game.dragging || !game.cueBall || !game.canShoot || game.aimPower < 2) return;
+      const cue = game.cueBall;
+      
+      ctx.save();
+      
+      // Direction arrow (opposite to drag = shot direction)
+      const arrowLen = 40 + game.aimPower * 2.5;
+      const endX = cue.x + Math.cos(game.aimAngle) * arrowLen;
+      const endY = cue.y + Math.sin(game.aimAngle) * arrowLen;
+      
+      // Main arrow line
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cue.x, cue.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      
+      // Glow line
+      ctx.strokeStyle = 'rgba(255,215,0,0.5)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cue.x, cue.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      
+      // Arrow head
+      const headLen = 12;
+      const headAngle = 0.5;
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(
+        endX - headLen * Math.cos(game.aimAngle - headAngle),
+        endY - headLen * Math.sin(game.aimAngle - headAngle)
+      );
+      ctx.lineTo(
+        endX - headLen * Math.cos(game.aimAngle + headAngle),
+        endY - headLen * Math.sin(game.aimAngle + headAngle)
+      );
+      ctx.closePath();
+      ctx.fill();
+      
+      // Power indicator circle
+      const powerRatio = game.aimPower / 18;
+      ctx.strokeStyle = `rgba(255, 215, 0, ${0.5 + powerRatio * 0.5})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cue.x, cue.y, cue.radius + 6 + powerRatio * 6, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Dotted aim circle around ball
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(cue.x, cue.y, cue.radius + 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      ctx.restore();
+    }
+
+    function createFloating(x, y, text, cls) {
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = text;
+      div.style.left = `${x + (Math.random() - 0.5) * 30}px`;
+      div.style.top = `${y - 20}px`;
+      gameContainer.appendChild(div);
+      setTimeout(() => div.remove(), 1200);
+    }
+
+    function areBallsMoving() {
+      const t = 0.25;
+      if (game.cueBall) {
+        const s = Math.sqrt(game.cueBall.vx ** 2 + game.cueBall.vy ** 2);
+        if (s > t) return true;
+      }
+      for (const b of game.targetBalls) {
+        if (b.active) {
+          const s = Math.sqrt(b.vx ** 2 + b.vy ** 2);
+          if (s > t) return true;
+        }
+      }
+      return false;
+    }
+
+    function stopAllBalls() {
+      if (game.cueBall) game.cueBall.vx = game.cueBall.vy = 0;
+      for (const b of game.targetBalls) b.vx = b.vy = 0;
+    }
+
+    function updatePhysics() {
+      const fric = 0.983;
+      const bounce = 0.55;
+      const stopT = 0.15;
+      
+      const allBalls = [game.cueBall, ...game.targetBalls.filter(b => b.active)];
+      
+      for (const b of allBalls) {
+        if (!b) continue;
+        const s = Math.sqrt(b.vx ** 2 + b.vy ** 2);
+        if (s < stopT) {
+          b.vx = b.vy = 0;
+        } else {
+          b.x += b.vx;
+          b.y += b.vy;
+          b.vx *= fric;
+          b.vy *= fric;
+          if (b.x < b.radius) { b.x = b.radius; b.vx *= -bounce; }
+          if (b.x > canvas.width - b.radius) { b.x = canvas.width - b.radius; b.vx *= -bounce; }
+          if (b.y < b.radius + 50) { b.y = b.radius + 50; b.vy *= -bounce; }
+          if (b.y > canvas.height - b.radius) { b.y = canvas.height - b.radius; b.vy *= -bounce; }
+        }
+      }
+      
+      // Collisions
+      for (let i = 0; i < allBalls.length; i++) {
+        for (let j = i + 1; j < allBalls.length; j++) {
+          const a = allBalls[i], b = allBalls[j];
+          if (!a || !b) continue;
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          const minD = a.radius + b.radius;
+          if (d < minD && d > 0) {
+            const nx = dx / d, ny = dy / d;
+            const overlap = minD - d;
+            a.x -= nx * overlap * 0.5;
+            a.y -= ny * overlap * 0.5;
+            b.x += nx * overlap * 0.5;
+            b.y += ny * overlap * 0.5;
+            const dvx = a.vx - b.vx, dvy = a.vy - b.vy;
+            const dvn = dvx * nx + dvy * ny;
+            if (dvn > 0) {
+              a.vx -= dvn * nx; a.vy -= dvn * ny;
+              b.vx += dvn * nx; b.vy += dvn * ny;
+              playSound('collide');
+            }
+          }
+        }
+      }
+      
+      // Pocket check
+      let pocketed = 0;
+      for (const ball of game.targetBalls) {
+        if (!ball.active) continue;
+        const s = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+        if (!isInsideFigure(ball.x, ball.y) && s < stopT) {
+          ball.active = false;
+          ball.vx = ball.vy = 0;
+          game.scores[0]++;
+          pocketed++;
+          game.pocketedThisTurn++;
+          playSound('score');
+          createFloating(ball.x, ball.y, '+1', 'floating-score');
+          
+          const comments = pocketed > 1 ? COMBO_COMMENTS : EXCITING_COMMENTS;
+          const comment = comments[Math.floor(Math.random() * comments.length)];
+          createFloating(ball.x, ball.y - 20, comment, 'floating-comment');
+          
+          document.getElementById('scoreValue').textContent = game.scores[0];
+        }
+      }
+      
+      // Turn
+      const moving = areBallsMoving();
+      if (!moving) {
+        game.ballsStoppedFrames++;
+        if (game.ballsStoppedFrames > 25 && !game.canShoot) {
+          stopAllBalls();
+          game.ballsStoppedFrames = 0;
+        }
+      } else {
+        game.ballsStoppedFrames = 0;
+      }
+      
+      if (!moving || game.ballsStoppedFrames > 25) {
+        updateHint();
+        if (game.pocketedThisTurn > 0) {
+          game.pocketedThisTurn = 0;
+          game.comboCount = 0;
+        }
+        if (!game.canShoot) game.canShoot = true;
+        if (game.targetBalls.every(b => !b.active) && !game.gameOver) {
+          game.gameOver = true;
+          setTimeout(showWin, 400);
+        }
+      }
+    }
+
+    function showWin() {
+      playSound('win');
+      const total = LEVELS[game.currentLevel].balls;
+      const shots = game.shotsTaken;
+      let score = 1000;
+      if (shots <= total) score += (total - shots + 1) * 100;
+      
+      let stars = 1;
+      if (shots <= total) stars = 3;
+      else if (shots <= total + 2) stars = 2;
+      
+      const starsEl = document.getElementById('starsDisplay').querySelectorAll('.star');
+      starsEl.forEach((s, i) => s.classList.toggle('earned', i < stars));
+      
+      const isLast = game.currentLevel >= LEVELS.length - 1;
+      document.getElementById('winText').textContent = isLast ? '🎉 All Done!' : 'Level Clear!';
+      document.getElementById('nextLevelBtn').textContent = isLast ? 'Again' : 'Next';
+      document.getElementById('shotValue').textContent = shots;
+      document.getElementById('winScore').textContent = `Score: ${score}`;
+      winOverlay.classList.add('show');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGround();
+      drawThrowingLine();
+      if (game.figurePoints.length) drawFigure();
+      for (const b of game.targetBalls) if (b.active) drawBall(b);
+      drawCueBall();
+      drawAimingLine();
+    }
+
+    function gameLoop() {
+      updatePhysics();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function getPos(e) {
+      const r = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    }
+
+    function handleStart(e) {
+      e.preventDefault();
+      initAudio();
+      if (game.gameOver || !game.canShoot) return;
+      const pos = getPos(e);
+      if (!game.cueBall) return;
+      const dx = pos.x - game.cueBall.x, dy = pos.y - game.cueBall.y;
+      if (dx * dx + dy * dy < (game.cueBall.radius * 2.5) ** 2) {
+        game.dragging = true;
+        game.dragStart = pos;
+        game.dragEnd = pos;
+        game.aimAngle = Math.atan2(game.cueBall.y - pos.y, game.cueBall.x - pos.x);
+        game.aimPower = 0;
+        hintText.style.opacity = '0';
+      }
+    }
+
+    function handleMove(e) {
+      e.preventDefault();
+      if (!game.dragging) return;
+      game.dragEnd = getPos(e);
+      const dx = game.dragStart.x - game.dragEnd.x;
+      const dy = game.dragStart.y - game.dragEnd.y;
+      game.aimPower = Math.min(Math.sqrt(dx * dx + dy * dy) * 0.1, 18);
+      game.aimAngle = Math.atan2(dy, dx);
+    }
+
+    function handleEnd(e) {
+      e.preventDefault();
+      if (!game.dragging || !game.cueBall || !game.canShoot) {
+        game.dragging = false;
+        return;
+      }
+      
+      // Only shoot if power is enough
+      if (game.aimPower > 3) {
+        game.cueBall.vx = Math.cos(game.aimAngle) * game.aimPower;
+        game.cueBall.vy = Math.sin(game.aimAngle) * game.aimPower;
+        game.canShoot = false;
+        game.pocketedThisTurn = 0;
+        game.shotsTaken++;
+        game.comboCount = 0;
+        document.getElementById('shotValue').textContent = game.shotsTaken;
+        document.getElementById('shotsDisplay').textContent = game.shotsTaken;
+        playSound('push');
+        updateHint();
+      }
+      
+      game.dragging = false;
+      game.aimPower = 0;
+      hintText.style.opacity = '1';
+    }
+
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    canvas.addEventListener('touchmove', handleMove, { passive: false });
+    canvas.addEventListener('touchend', handleEnd, { passive: false });
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleEnd);
+
+    document.querySelectorAll('[data-mode]').forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll('[data-mode]').forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected');
+        game.mode = b.dataset.mode;
+      };
+    });
+
+    document.getElementById('startBtn').onclick = () => {
+      initAudio();
+      menuOverlay.classList.add('hidden');
+      setupLevel();
+      initBalls();
+    };
+
+    const toggleSound = () => {
+      game.soundEnabled = !game.soundEnabled;
+      const btns = [document.getElementById('soundBtn'), document.getElementById('menuSoundBtn')];
+      btns.forEach(b => {
+        if (b) {
+          b.textContent = game.soundEnabled ? '🔊' : '🔇';
+          b.classList.toggle('muted', !game.soundEnabled);
+        }
+      });
+      if (game.soundEnabled) { initAudio(); playSound('collide'); }
+    };
+
+    document.getElementById('soundBtn').onclick = toggleSound;
+    document.getElementById('menuSoundBtn').onclick = toggleSound;
+    document.getElementById('resetBtn').onclick = () => { setupLevel(); initBalls(); };
+
+    document.getElementById('nextLevelBtn').onclick = () => {
+      winOverlay.classList.remove('show');
+      if (game.currentLevel >= LEVELS.length - 1) game.currentLevel = 0;
+      else game.currentLevel++;
+      setupLevel();
+      initBalls();
+    };
+
+    document.getElementById('menuBtn2').onclick = () => {
+      winOverlay.classList.remove('show');
+      menuOverlay.classList.remove('hidden');
+      generateFigureButtons();
+    };
+
+    window.onresize = resizeCanvas;
+
+    // Prevent pull refresh
+    document.addEventListener('touchmove', e => {
+      if (e.target === document.body || e.target === canvas) e.preventDefault();
+    }, { passive: false });
+
+    generateFigureButtons();
+    resizeCanvas();
+    setupLevel();
+    initBalls();
+    gameLoop();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0fc2b524fa57e89',t:'MTc4MjE0MDkxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
